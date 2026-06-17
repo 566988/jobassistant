@@ -1,12 +1,11 @@
 from langchain_community.chat_models.tongyi import ChatTongyi
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain.chains import LLMChain
 
 def get_llm():
-    # 推荐 qwen-plus（效果好、速度快）；qwen-max 更强但稍慢
     return ChatTongyi(model="qwen-plus", temperature=0.3)
 
-# 简历与JD匹配分析提示
+# 提示模板（不变）
 analysis_prompt = ChatPromptTemplate.from_messages([
     ("system", """You are an expert career coach and resume writer. 
 Analyze the resume against the job description provided.
@@ -22,7 +21,6 @@ Use plain English, be direct and helpful."""),
     ("human", "Resume:\n{resume}\n\nJob Description:\n{jd}")
 ])
 
-# 单段经历优化提示
 rewrite_prompt = ChatPromptTemplate.from_messages([
     ("system", """You are an expert resume writer. Rewrite the given experience bullet point to better match the job description. 
 Use strong action verbs, include quantifiable achievements if possible, and mirror keywords from the JD.

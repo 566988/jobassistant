@@ -1,11 +1,11 @@
 from langchain_community.chat_models.tongyi import ChatTongyi
 from langchain_core.prompts import ChatPromptTemplate
-from langchain.chains import LLMChain
+from langchain_core.output_parsers import StrOutputParser
 
 def get_llm():
     return ChatTongyi(model="qwen-plus", temperature=0.3)
 
-# 提示模板（不变）
+# 简历分析提示模板
 analysis_prompt = ChatPromptTemplate.from_messages([
     ("system", """You are an expert career coach and resume writer. 
 Analyze the resume against the job description provided.
@@ -21,6 +21,7 @@ Use plain English, be direct and helpful."""),
     ("human", "Resume:\n{resume}\n\nJob Description:\n{jd}")
 ])
 
+# 经历重写提示模板
 rewrite_prompt = ChatPromptTemplate.from_messages([
     ("system", """You are an expert resume writer. Rewrite the given experience bullet point to better match the job description. 
 Use strong action verbs, include quantifiable achievements if possible, and mirror keywords from the JD.
@@ -30,10 +31,11 @@ Return only the rewritten bullet point(s)."""),
 
 def analyze_resume(resume_text, jd_text):
     llm = get_llm()
-    chain = LLMChain(llm=llm, prompt=analysis_prompt)
-    return chain.run(resume=resume_text, jd=jd_text)
+    # 使用 LCEL 链：提示模板 -> 模型 -> 字符串解析器
+    chain = analysis_prompt | llm | StrOutputParser()
+    return chain.invoke({"resume": resume_text, "jd": jd_text})
 
 def rewrite_experience(experience_text, jd_text):
     llm = get_llm()
-    chain = LLMChain(llm=llm, prompt=rewrite_prompt)
-    return chain.run(experience=experience_text, jd=jd_text)
+    chain = rewrite_prompt | llm | StrOutputParser()
+    return chain.invoke({"experience": experience_text, "jd": jd_text})

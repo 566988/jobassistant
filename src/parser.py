@@ -17,13 +17,30 @@ def extract_text_from_pdf(file) -> str:
 
 def extract_text_from_docx(file) -> str:
     try:
-        # 使用 getvalue() 获取字节流，兼容所有 Streamlit 版本
         file_bytes = file.getvalue()
         doc = docx.Document(io.BytesIO(file_bytes))
-        text = "\n".join([para.text for para in doc.paragraphs])
-        if not text.strip():
-            raise ValueError("DOCX 文件中未提取到文本，请检查文件内容")
-        return text.strip()
+
+        # 1. 提取所有段落文本
+        paragraphs = [para.text for para in doc.paragraphs if para.text.strip()]
+
+        # 2. 提取所有表格中的文本
+        tables_text = []
+        for table in doc.tables:
+            for row in table.rows:
+                row_text = []
+                for cell in row.cells:
+                    cell_text = cell.text.strip()
+                    if cell_text:
+                        row_text.append(cell_text)
+                if row_text:
+                    tables_text.append(" | ".join(row_text))
+
+        # 3. 合并
+        all_text = "\n".join(paragraphs + tables_text)
+
+        if not all_text.strip():
+            raise ValueError("未提取到文本。请确认文档内容不是纯图片或扫描件，建议转为 PDF 上传。")
+        return all_text.strip()
     except Exception as e:
         raise ValueError(f"DOCX 解析失败: {e}")
 

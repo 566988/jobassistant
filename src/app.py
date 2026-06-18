@@ -17,7 +17,6 @@ if "analysis_result" not in st.session_state:
 # 侧边栏：DashScope API Key 配置
 with st.sidebar:
     st.header("🔑 配置")
-    # 从环境变量或 Streamlit secrets 读取 API Key
     dashscope_key = os.environ.get("DASHSCOPE_API_KEY", st.secrets.get("DASHSCOPE_API_KEY", ""))
     user_api_key = st.text_input("输入你的 DashScope API Key", value=dashscope_key, type="password")
     if user_api_key:
@@ -40,7 +39,7 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("📄 上传简历")
-    uploaded_file = st.file_uploader("支持 PDF, DOCX, TXT", type=["pdf", "docx", "txt"])
+    uploaded_file = st.file_uploader("支持 PDF 或 DOCX", type=["pdf", "docx"])
     if uploaded_file is not None:
         try:
             st.session_state.resume_text = parse_resume(uploaded_file)

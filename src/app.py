@@ -14,7 +14,7 @@ if "jd_text" not in st.session_state:
 if "analysis_result" not in st.session_state:
     st.session_state.analysis_result = None
 
-# 侧边栏：DashScope API Key 配置
+# 侧边栏配置
 with st.sidebar:
     st.header("🔑 配置")
     dashscope_key = os.environ.get("DASHSCOPE_API_KEY", st.secrets.get("DASHSCOPE_API_KEY", ""))
@@ -28,13 +28,13 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("### 使用说明")
     st.markdown("""
-    1. 上传你的简历（PDF/Word/TXT）
+    1. 上传你的简历（PDF 或 DOCX）
     2. 粘贴目标职位的描述
     3. 点击“开始分析”获取匹配度和优化建议
     4. 可选：对某段经历进行 AI 重写优化
     """)
 
-# 主界面布局
+# 主界面
 col1, col2 = st.columns(2)
 
 with col1:
@@ -42,10 +42,14 @@ with col1:
     uploaded_file = st.file_uploader("支持 PDF 或 DOCX", type=["pdf", "docx"])
     if uploaded_file is not None:
         try:
-            st.session_state.resume_text = parse_resume(uploaded_file)
-            st.success("简历解析成功！")
-            with st.expander("查看解析后的文本"):
-                st.text(st.session_state.resume_text[:2000])
+            resume = parse_resume(uploaded_file)
+            st.session_state.resume_text = resume
+            if resume:
+                st.success(f"简历解析成功！共提取 {len(resume)} 个字符")
+                with st.expander("查看解析后的文本"):
+                    st.text(resume[:2000])
+            else:
+                st.error("解析出的简历文本为空，请检查文件内容")
         except Exception as e:
             st.error(f"解析失败: {e}")
 
@@ -56,7 +60,8 @@ with col2:
         st.session_state.jd_text = jd_input
 
 # 分析按钮
-if st.button("🔍 开始分析", type="primary", disabled=not (user_api_key and st.session_state.resume_text and st.session_state.jd_text)):
+if st.button("🔍 开始分析", type="primary",
+              disabled=not (user_api_key and st.session_state.resume_text.strip() and st.session_state.jd_text.strip())):
     with st.spinner("AI 正在深度分析中，请稍候..."):
         try:
             analysis = analyze_resume(st.session_state.resume_text, st.session_state.jd_text)
@@ -74,7 +79,8 @@ if st.session_state.analysis_result:
 st.markdown("---")
 st.subheader("✏️ 单段经历优化")
 experience_input = st.text_area("粘贴你想优化的一段经历（如一个工作职责描述）")
-if st.button("✨ 基于 JD 优化这段经历", disabled=not (user_api_key and experience_input and st.session_state.jd_text)):
+if st.button("✨ 基于 JD 优化这段经历",
+              disabled=not (user_api_key and experience_input.strip() and st.session_state.jd_text.strip())):
     with st.spinner("重写中..."):
         try:
             rewritten = rewrite_experience(experience_input, st.session_state.jd_text)
